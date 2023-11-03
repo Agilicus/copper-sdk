@@ -96,6 +96,7 @@ class Copper:
             print(f"COPPER ERROR: copper {response.content.decode('utf-8')}: {exc}")
             print(f"COPPER ERROR: {response} is not JSON")
             body = None
+            response.close()
             raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {response.content.decode('utf-8')}", None, None)
         except JSONDecodeError as exc:
             self.num_50x = self.num_50x + 1
@@ -104,9 +105,11 @@ class Copper:
             print(f"COPPER ERROR: copper {response.content.decode('utf-8')}: {exc}")
             print(f"COPPER ERROR: {response} is not JSON")
             body = None
+            response.close()
             raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {response.content.decode('utf-8')}", None, None)
 
         if body is not None and "success" in body and body["success"] == False and "status" in body and body["status"] == 500:
+            response.close()
             raise requests.exceptions.HTTPError(endpoint, 500, "Internal copper error", None, None)
 
         return response.json()
