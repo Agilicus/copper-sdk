@@ -1,3 +1,6 @@
+import sys
+import os
+from datetime import datetime
 import requests
 from retry import retry
 from json import JSONDecodeError
@@ -25,6 +28,9 @@ class Copper:
         self.email = email
         self.base_url = base_url
         self.debug = debug
+        self.num_50x = 0
+        self.num_429 = 0
+        self.num = 0
 
         # init request
         if not session:
@@ -50,23 +56,58 @@ class Copper:
     def delete(self, endpoint, json_body=None):
         return self.api_call('delete', endpoint, json_body=json_body)
 
-    @retry(exceptions=(JSONDecodeError, requests.exceptions.HTTPError), delay=2, backoff=3, max_delay=5, tries=5)
+
+    def print_api(self, start_time, end_time, method, endpoint, code):
+        if os.environ.get('COPPER_API_TRACE') is not None:
+            elapsed = end_time - start_time
+            print(f"{method}/{endpoint} -> {code} ({elapsed.seconds}.{elapsed.microseconds})", file=sys.stderr)
+
+
+    @retry(exceptions=(TooManyRequests, JSONDecodeError, requests.exceptions.HTTPError), delay=1, backoff=5, max_delay=10, tries=100)
     def api_call(self, method, endpoint, json_body=None):
+        self.num = self.num + 1
         if self.debug:
             print("json_body:", json_body)
 
+        start_time = datetime.now()
+
         # dynamically call method to handle status change
-        response = self.session.request(method, self.base_url + endpoint, json=json_body)
+        try:
+            response = self.session.request(method, self.base_url + endpoint, json=json_body)
+        except:
+            self.print_api(start_time, datetime.now(), method, endpoint, "exception")
+            raise
+
+        self.print_api(start_time, datetime.now(), method, endpoint, response.status_code)
 
         if response.status_code == 429:
+            self.num_429 = self.num_429 + 1
             raise TooManyRequests('429 Server Rate Limit', response=response, json_body=json_body)
 
         if self.debug:
             print(response.text)
 
-        body = response.json()
-        if body and "success" in body and body["success"] == False and "status" in body and body["status"] == 500:
-            raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {body}", None, None)
+        try:
+            body = response.json()
+        except requests.JSONDecodeError as exc:
+            self.num_50x = self.num_50x + 1
+            print(f"ERROR: copper {method} - {endpoint} - {exc} -- {self.num_50x} 50x errors, {self.num_429} 429 errors")
+            print(f"ERROR: copper {response.status_code}: {exc}")
+            print(f"ERROR: copper {response.content.decode('utf-8')}: {exc}")
+            print(f"ERROR: {response} is not JSON")
+            body = None
+            raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {response.content.decode('utf-8')}", None, None)
+        except JSONDecodeError as exc:
+            self.num_50x = self.num_50x + 1
+            print(f"ERROR: copper {method} - {endpoint} - {exc} -- {self.num_50x} 50x errors, {self.num_429} 429 errors")
+            print(f"ERROR: copper {response.status_code}: {exc}")
+            print(f"ERROR: copper {response.content.decode('utf-8')}: {exc}")
+            print(f"ERROR: {response} is not JSON")
+            body = None
+            raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {response.content.decode('utf-8')}", None, None)
+
+        if body is not None and "success" in body and body["success"] == False and "status" in body and body["status"] == 500:
+            raise requests.exceptions.HTTPError(endpoint, 500, "Internal copper error", None, None)
 
         return response.json()
 
