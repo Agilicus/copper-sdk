@@ -60,7 +60,7 @@ class Copper:
     def print_api(self, start_time, end_time, method, endpoint, code):
         if os.environ.get('COPPER_API_TRACE') is not None:
             elapsed = end_time - start_time
-            print(f"{method}/{endpoint} -> {code} ({elapsed.seconds}.{elapsed.microseconds})", file=sys.stderr)
+            print(f"COPPER_API_TRACE: {method}/{endpoint} -> {code} ({elapsed.seconds}.{elapsed.microseconds})", file=sys.stderr)
 
 
     @retry(exceptions=(TooManyRequests, JSONDecodeError, requests.exceptions.HTTPError), delay=1, backoff=5, max_delay=10, tries=100)
@@ -91,18 +91,18 @@ class Copper:
             body = response.json()
         except requests.JSONDecodeError as exc:
             self.num_50x = self.num_50x + 1
-            print(f"ERROR: copper {method} - {endpoint} - {exc} -- {self.num_50x} 50x errors, {self.num_429} 429 errors")
-            print(f"ERROR: copper {response.status_code}: {exc}")
-            print(f"ERROR: copper {response.content.decode('utf-8')}: {exc}")
-            print(f"ERROR: {response} is not JSON")
+            print(f"COPPER ERROR: copper {method} - {endpoint} - {exc} -- {self.num_50x} 50x errors, {self.num_429} 429 errors")
+            print(f"COPPER ERROR: copper {response.status_code}: {exc}")
+            print(f"COPPER ERROR: copper {response.content.decode('utf-8')}: {exc}")
+            print(f"COPPER ERROR: {response} is not JSON")
             body = None
             raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {response.content.decode('utf-8')}", None, None)
         except JSONDecodeError as exc:
             self.num_50x = self.num_50x + 1
-            print(f"ERROR: copper {method} - {endpoint} - {exc} -- {self.num_50x} 50x errors, {self.num_429} 429 errors")
-            print(f"ERROR: copper {response.status_code}: {exc}")
-            print(f"ERROR: copper {response.content.decode('utf-8')}: {exc}")
-            print(f"ERROR: {response} is not JSON")
+            print(f"COPPER ERROR: copper {method} - {endpoint} - {exc} -- {self.num_50x} 50x errors, {self.num_429} 429 errors")
+            print(f"COPPER ERROR: copper {response.status_code}: {exc}")
+            print(f"COPPER ERROR: copper {response.content.decode('utf-8')}: {exc}")
+            print(f"COPPER ERROR: {response} is not JSON")
             body = None
             raise requests.exceptions.HTTPError(endpoint, 500, f"Internal copper error {response.content.decode('utf-8')}", None, None)
 
