@@ -4,6 +4,9 @@ from datetime import datetime
 import requests
 from retry import retry
 from json import JSONDecodeError
+
+from copper_sdk.pipeline_stages import PipelineStages
+from copper_sdk.pipelines import Pipelines
 from copper_sdk.users import Users
 from copper_sdk.leads import Leads
 from copper_sdk.account import Account
@@ -15,7 +18,9 @@ from copper_sdk.customer_sources import CustomerSources
 from copper_sdk.loss_reasons import LossReasons
 from copper_sdk.custom_field_definitions import CustomFieldDefinitions
 from copper_sdk.tags import Tags
+from copper_sdk.tasks import Tasks
 from copper_sdk.exception import TooManyRequests
+from copper_sdk.webhooks import Webhooks
 
 BASE_URL = 'https://api.copper.com/developer_api/v1'
 
@@ -155,5 +160,21 @@ class Copper:
         return Tags(self)
 
     @property
+    def tasks(self):
+        return Tasks(self)
+
+    @property
     def customfielddefinitions(self):
         return CustomFieldDefinitions(self)
+
+    @property
+    def webhooks(self):
+        return Webhooks(self)
+
+    @property
+    def pipelines(self):
+        return Pipelines(self)
+
+    @property
+    def pipelinestages(self):
+        return PipelineStages(self)
