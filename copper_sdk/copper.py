@@ -62,10 +62,10 @@ class Copper:
         return self.api_call('delete', endpoint, json_body=json_body)
 
 
-    def print_api(self, start_time, end_time, method, endpoint, code):
+    def print_api(self, start_time, end_time, method, endpoint, code, body):
         if os.environ.get('COPPER_API_TRACE') is not None:
             elapsed = end_time - start_time
-            print(f"COPPER_API_TRACE: {method}/{endpoint} -> {code} ({elapsed.seconds}.{elapsed.microseconds})", file=sys.stderr)
+            print(f"COPPER_API_TRACE: {method}/{endpoint} - {body} --> {code} ({elapsed.seconds}.{elapsed.microseconds})", file=sys.stderr)
 
 
     @retry(exceptions=(TooManyRequests, JSONDecodeError, requests.exceptions.HTTPError), delay=1, backoff=5, max_delay=10, tries=100)
@@ -80,10 +80,10 @@ class Copper:
         try:
             response = self.session.request(method, self.base_url + endpoint, json=json_body)
         except:
-            self.print_api(start_time, datetime.now(), method, endpoint, "exception")
+            self.print_api(start_time, datetime.now(), method, endpoint, "exception", body=json_body)
             raise
 
-        self.print_api(start_time, datetime.now(), method, endpoint, response.status_code)
+        self.print_api(start_time, datetime.now(), method, endpoint, response.status_code, body=json_body)
 
         if response.status_code == 429:
             self.num_429 = self.num_429 + 1
