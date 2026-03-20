@@ -45,13 +45,33 @@ class People(BaseResource):
 
         return self.copper.delete(f'/people/{id}/related', json_body=body)
 
+    def relate_to_opportunity(self, id, opportunity_id):
+        body = {
+          'resource': {
+              'id': opportunity_id,
+              'type': 'opportunity'
+          }
+        }
+
+        return self.copper.post(f'/people/{id}/related', body)
+
+    def unrelate_to_opportunity(self, id, opportunity_id):
+        body = {
+          'resource': {
+              'id': opportunity_id,
+              'type': 'opportunity'
+          }
+        }
+
+        return self.copper.delete(f'/people/{id}/related', json_body=body)
+
     def list(self, body=None):
         if body is None:
             body = {}
         default_body = {
             'page_number': 1, # number	The page number (starting with 1) that you would like to view.	1
             'page_size': 20, # number	The number of entries included in a page of results	20
-            'sort_by': 'first_name',  # string	The field on which to sort the results (see footnote 1).
+            'sort_by': 'date_modified',  # string	The field on which to sort the results (see footnote 1).
             'sort_direction': 'asc',  # string	The direction in which to sort the results. Possible values are: asc or desc.
         }
 
