@@ -12,9 +12,5 @@ class Users(BaseResource):
     def list(self, body=None):
         if body is None:
             body = {}
-        default_body = {
-            'page_number': 1, # number	The page number (starting with 1) that you would like to view.	1
-            'page_size': 20, # number	The number of entries included in a page of results	20
-        }
 
-        return self.copper.post('/users/search', {**default_body, **body})
+        return self.copper.post('/users/search', body)
