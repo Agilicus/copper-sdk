@@ -23,3 +23,6 @@ class Pipelines(BaseResource):
 
     def list(self):
         return self.copper.get('/pipelines')
+
+    def related(self, id):
+        return self.copper.get(f'/pipelines/{id}/related')
